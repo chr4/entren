@@ -1,0 +1,338 @@
+# Example: /etc/entren.conf
+# entren -- a traffic analyser, may also be used as IDS
+# by Chris Aumann <c_aumann@users.sourceforge.net>
+# <http://entren.sourceforge.net/>
+# February 2002
+
+# This is a Comment.
+
+################################################
+# global options
+
+# use_system:
+# Default "1"
+# If use_system is set, entren calls the system() call to execute the commands
+# set in "command1" and "command2".
+# If use_system is not set, the programm calls "execvp()" to execute the
+# commands.
+# execvp() is much faster than system(), but you need system() if you may use
+# pipes/etc in your commands
+use_system = 0
+
+# log_level
+# Default: notice
+# log level sets the log level for entren.
+# The options are:
+#
+# emerg, alert, crit, err, warning, notice, info, debug
+#
+# where emerg is the highest, and debug is the lowest log-level. 
+# The differences between the log-levels are set in the syslog config file,
+# usually /etc/syslog.conf
+log_level = warning
+
+# The SOCK_PACKET Version vor linux isn't ready yet.
+# For this time, linux will capture all incoming packets.
+# There's no way to capture outgoing packages.
+
+# (BSD) The device to sniff the packages from (Default: lo0)
+#device = lo0
+
+# (BSD) If you want the promiscous-mode, set promisc to 1 (Default: 0)
+#promisc = 1
+
+# (BSD) To capture outgoing packages too, set capture_outgoing to 1 (Default: 0)
+#capture_outgoing = 1
+
+#################################################
+
+
+#################################################
+# The rules:
+# Each rule starts with an [protocol]
+# [tcp] [udp] [icmp]
+# The end of a rule is a) the beginning of the next rule, b) the end of the file
+#
+# The options where set in this format:
+# key = value
+#
+# from = host [ip/hostname]
+#    Check only packets from host "host"
+#    You can invert this option with a !
+#    (Capture only packets that are _not_ from host "host", eg !www.cnn.com)
+#
+# to = host [ip/hostname]
+#    Check only packets to host "host"
+#    You can invert this option with a !
+#
+# dest_port = port    (tcp/udp only)
+#    Capture only packages to port "port"
+#    You can invert this option with a !
+#    (Capture only packets with a dest port != "port")
+#
+# source_port = port    (tcp/udp only)
+#    Capture only packages from port "port"
+#    You can invert this option with a !
+#
+# grep = string
+#    Capture only packages with the string "string" in the payload.
+#    (Cannot be used together with "egrep")
+#
+# egrep = regex
+#    Capture only packages with the regular expressen "regex" in the payload.
+#    (e.g. egrep = ^user.*(root|user) )
+#    (Cannot be used together with "grep")
+#    Note: egrep is much slower than "grep"
+#
+# count = nr
+#    This rule is true, after "nr" matching packages
+#
+# tcp_flags = flags     (tcp only)
+#    Capture only packages with the given tcp-flags set/not set.
+#    syn ack fin urg psh rst
+#    You can define multiple flags (seperatet by spaces)
+#    Each flag can be invert by a !
+#
+#    Example:
+#        tcp_flags = syn !ack
+#        # Capture every packet that has the syn flag set, but not the ack flag
+#    
+#
+# portscan_mode = 0/1   (tcp only)
+#    If set (1), The rule is only true, if the dest port of this packet
+#    is different to the dest port from the last package captured by this rule.
+#    (You may need this option to detect portscans)
+#
+# icmp_type = typenr [typenr2 ...]    (icmp only)
+#    Capture only packages with the icmp-type-number "typenr"
+#    You can define multiple types (seperated with spaces)
+#    You can define any type between 0 and 30 (o and ICMPTYPELEN)
+#
+#    0  echo-reply
+#    3  dest unreach
+#    4  source quench
+#    5  redirect
+#    6  alternate host address
+#    8  echo-request
+#    9  router advertisement
+#    10 router selection
+#    11 time exceeded
+#    12 parameter problem
+#    13 timestamp request
+#    14 timestamp reply
+#    15 information request
+#    16 information reply
+#    17 addres mask request
+#    18 address mask reply
+#    30 traceroute
+#
+#
+#    Example:
+#        icmp_type = 0 8
+#        # Capture only packages with icmp-type 0 or 8 (echo request,echo reply)
+#
+#
+#
+# time = seconds
+#    This rule is true, if "count" packages matching in "seconds" seconds.
+#
+# command1 = system-command
+#    If the rule is true, call the system-commando "system-commando"
+#    (also see the option "use_system")
+#
+# delay = sekunden
+#    Time in seconds to wait between command1 and command2.
+#    (ignored if command2 isn't set)
+#
+# command2 = system-command
+#    If the rule is true, and command1 is executed (and returned), wait "delay"
+#    seconds, and call "system-command"
+#    (also see the option "use_system")
+#
+# Example: 
+#    # ( If the rule is true, block sip for 300 seconds, then release sip)
+#
+#    command1 = ipfw add drop ip from %sip to any 
+#    delay = 300
+#    command2 = ipfw del drop ip from %sip to any
+#
+#
+# logstr = logstring
+#    If the rule is true, write the string "logstr" to syslog.
+#    (by default: /var/log/messages)
+#    The log-level can be set by the "log_level" option.
+#
+#
+# There are some wildcards, that may be used in the command1/command2 and the
+# logstr options.
+# entren replaces the wildcard with the current values in the package.
+# (the last package captured by this rule)
+#
+#
+# The following wildcards will be replaced by the program.
+# %sip %dip == source/dest ip
+# %sport %dport == source/dest port (tcp/udp only)
+# %tcp_flags == TCP flags (tcp only)
+# %icmp_type == ICMP type (icmp only)
+# %grep == current grepstring
+# %data == payload
+# %time == current time
+#
+# Example:
+#    logstr = packet from: %sip:%sport to %dip:%dport tcp flags: %tcp_flags
+#    # may write the following string to syslog:
+#    # packet from: 192.168.0.1:4444 to 123.123.123.123:9876 tcp flags: SYN ACK
+#
+#
+#
+#
+# Any questions?: <c_aumann@users.sourceforge.net>
+# Online docu:    <http://entren.sourceforge.net/>
+#
+#################################################
+
+
+#################################################
+# Some example rules
+#################################################
+
+
+# rule to detect tcp-connect/half-open portscans
+[tcp]
+
+    # tcp connect / half open
+    tcp_flags   = syn !ack
+    
+    # after 20 packages in 60 seconds a scan
+	count       = 20
+	time	    = 60
+	
+    # we need the portscan mode
+    portscan_mode = 1 
+
+
+    #############################################################
+    # possible actions against the attacker
+    # (create a new firewall rule to block his ip for 30 seconds)
+    #
+    #    command1     = ipfw add deny ip from %sip to any
+    #    delay        = 30
+    #    command2     = ipfw del deny ip from %sip to any
+    #
+    #############################################################
+
+    # the string for syslog
+    logstr = portscan from: %sip [tcp-connect/half-open]
+
+
+
+# rule to detect "null" scans
+[tcp]
+
+    # null scan
+    tcp_flags   = !syn !ack !psh !rst !urg !fin
+    
+    # after 10 packages in 60 seconds a scan
+	count       = 10
+	time	    = 60
+	
+    # we need the portscan mode
+    portscan_mode = 1 
+
+
+    #############################################################
+    # possible actions against the attacker
+    # (create a new firewall rule to block his ip for 30 seconds)
+    #
+    #    command1     = ipfw add deny ip from %sip to any
+    #    delay        = 30
+    #    command2     = ipfw del deny ip from %sip to any
+    #
+    #############################################################
+
+    # the string for syslog
+    logstr = portscan from: %sip [null scan]
+
+
+
+# rule to detect "xmas" portscans
+[tcp]
+
+    # nmap xmas scan
+    tcp_flags   = fin urg psh 
+    
+    # after 10 packages in 60 seconds a scan
+	count       = 10
+	time	    = 60
+	
+    # we need the portscan mode
+    portscan_mode = 1 
+
+    #############################################################
+    # possible actions against the attacker
+    # (create a new firewall rule to block his ip for 30 seconds)
+    #
+    #    command1     = ipfw add deny ip from %sip to any
+    #    delay        = 30
+    #    command2     = ipfw del deny ip from %sip to any
+    #
+    #############################################################
+
+    # the string for syslog
+    logstr = portscan from: %sip [xmas scan]
+
+
+
+# rule to detect fin portscans
+[tcp]
+
+    # fin scan
+    tcp_flags   = !syn !ack !rst !urg !psh fin
+    
+    # after 50 packages in 30 seconds a scan
+	count       = 50
+	time	    = 30
+	
+    # we need the portscan mode
+    portscan_mode = 1 
+
+
+    #############################################################
+    # possible actions against the attacker
+    # (create a new firewall rule to block his ip for 30 seconds)
+    #
+    #    command1     = ipfw add deny ip from %sip to any
+    #    delay        = 30
+    #    command2     = ipfw del deny ip from %sip to any
+    #
+    #############################################################
+
+    # string for syslog
+    logstr = portscan from: %sip [fin]
+
+
+# An example rule to detect root or "user" logins in you ftp
+[tcp]
+
+    # ftp port
+    dest_port = 21
+    
+    # grep a regular expression
+    egrep = ^user.*(root|user)
+
+    logstr = ftp login from: %sip
+
+
+# Simple example udp rule to detect every udp packet with the word 
+# "hacker" in the payload
+[udp]
+    grep   = hacker
+    logstr = udp packet with the word 'hacker' from: %sip
+
+
+
+# icmp rule, that detects all echo/echo-reply packages, and sends a
+# message to syslog
+[icmp]
+	icmp_type   = 0 8
+	logstr      = [ICMP] %sip->%dip %icmp_type || %data
