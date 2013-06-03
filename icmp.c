@@ -272,4 +272,3 @@ icmp_log (struct ip *iph, struct icmp *icmph, char *data) {
 
     return 0;
 }
- 

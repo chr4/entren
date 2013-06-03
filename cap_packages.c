@@ -112,7 +112,7 @@ cap_packages(void) {
         }
     }
     
-    /* deaktivate promisc mode */
+    /* deactivate promisc mode */
     else {
     
         memset(&ifr, 0, sizeof(ifr));

@@ -363,4 +363,3 @@ tcp_log (struct ip *iph, struct tcphdr *tcph, char *data) {
 
     return 0;
 }
-

@@ -47,8 +47,8 @@ struct tcpbla {
     char not_dip;     /* ips _ausser_ sip/dip beachtet */
     
     
-    u_short sport;    /* source port, network byte order */  
-    u_short dport;    /* dest port, network byte order */
+    int sport;    /* source port, network byte order */  
+    int dport;    /* dest port, network byte order */
     
     char not_sport;   /* negativ flags fuer die ports: wenn gesetzt, */
     char not_dport;   /* werden alle ports _ausser_ sport/dport true */
@@ -106,8 +106,8 @@ struct udpbla {
     char not_dip;     /* ips _ausser_ sip/dip beachtet */
     
     
-    u_short sport;    /* source port, network byte order */  
-    u_short dport;    /* dest port, network byte order */
+    int sport;    /* source port, network byte order */  
+    int dport;    /* dest port, network byte order */
     
     char not_sport;   /* negativ flags fuer die ports: wenn gesetzt, */
     char not_dport;   /* werden alle ports _ausser_ sport/dport true */
