@@ -1,3 +1,5 @@
+# vim: ft=dosini
+#
 # Example: /etc/entren.conf
 # entren -- a traffic analyser, may also be used as IDS
 # by Chris Aumann <c_aumann@users.sourceforge.net>
