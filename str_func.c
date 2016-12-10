@@ -258,8 +258,9 @@ regex_match(const char *string, char *pattern) {
 
 /* implementationen von strlcpy und strlcat */
 /* (auf linux normalerweise nicht vorhanden */
-
+#ifndef MIN
 #define MIN(x, y)  ((x) < (y) ? (x) : (y))
+#endif
 
 #ifndef strlcpy
 size_t 
